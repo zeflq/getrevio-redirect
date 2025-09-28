@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+run pnpx json-server --watch mocks/db.json --port 3456
+
 First, run the development server:
 
 ```bash

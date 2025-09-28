@@ -1,0 +1,12 @@
+{
+  "shortlinks": [
+    {
+      "id": "test1",
+      "slug": "bella-pizza-sept-2025",
+      "status": "active",
+      "merchantId": "mer_123",
+      "campaignId": "cmp_456",
+      "updatedAt": "2025-09-27T10:00:00Z"
+    }
+  ]
+}
