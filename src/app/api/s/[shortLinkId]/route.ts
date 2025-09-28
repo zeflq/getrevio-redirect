@@ -5,7 +5,7 @@ export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortLinkId: string } }
+  { params }: { params: Promise<{ shortLinkId: string }> }
 ) {
   const { shortLinkId } = await params;
 

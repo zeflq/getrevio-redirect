@@ -1,13 +1,38 @@
 'use client';
 
 import { useState } from 'react';
+type ShortLinkDetails = {
+  slug: string;
+  status: string;
+  merchantId: string;
+  campaignId: string;
+  updatedAt: string; // ISO string
+};
 
-interface TestResult {
-  type: 'check' | 'redirect';
-  success: boolean;
-  data?: any;
-  error?: string;
-}
+type CheckResultData = {
+  result: 0 | 1;
+  message: string;
+  details?: ShortLinkDetails;
+};
+
+type RedirectResultData = {
+  redirectUrl: string;
+  details?: ShortLinkDetails;
+};
+
+type TestResult =
+  | {
+      type: 'check';
+      success: boolean;
+      data?: CheckResultData;
+      error?: string;
+    }
+  | {
+      type: 'redirect';
+      success: boolean;
+      data?: RedirectResultData;
+      error?: string;
+    };
 
 export default function TestPage() {
   const [shortlink, setShortlink] = useState('');
@@ -171,10 +196,10 @@ export default function TestPage() {
                   {result.type === 'check' ? (
                     <div>
                       <p className="font-semibold">
-                        Result: {result.data.result} ({result.data.result === 1 ? 'Active' : 'Inactive'})
+                        Result: {result.data?.result} ({result.data?.result === 1 ? 'Active' : 'Inactive'})
                       </p>
-                      <p className="text-sm mt-1">{result.data.message}</p>
-                      {result.data.details && (
+                      <p className="text-sm mt-1">{result.data?.message}</p>
+                      {result.data?.details && (
                         <div className="mt-2 text-xs">
                           <p><strong>Slug:</strong> {result.data.details.slug}</p>
                           <p><strong>Status:</strong> {result.data.details.status}</p>
@@ -188,14 +213,14 @@ export default function TestPage() {
                     <div>
                       <p className="font-semibold">Redirect URL:</p>
                       <a 
-                        href={result.data.redirectUrl} 
+                        href={result.data?.redirectUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 underline break-all"
                       >
-                        {result.data.redirectUrl}
+                        {result.data?.redirectUrl}
                       </a>
-                      {result.data.details && (
+                      {result.data?.details && (
                         <div className="mt-2 text-xs">
                           <p><strong>Slug:</strong> {result.data.details.slug}</p>
                           <p><strong>Status:</strong> {result.data.details.status}</p>
