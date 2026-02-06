@@ -20,10 +20,10 @@ export class ShortLinkService {
       return null;
     }
 
-    let parsed = payload;
+    let parsed: unknown = payload;
     if (typeof payload === 'string') {
       try {
-        parsed = JSON.parse(payload) as unknown;
+        parsed = JSON.parse(payload);
       } catch {
         return null;
       }
@@ -45,7 +45,17 @@ export class ShortLinkService {
       typeof record.campaignId === 'string' &&
       typeof record.updatedAt === 'string'
     ) {
-      return record as ShortLink;
+      return {
+        slug: record.slug,
+        status: record.status,
+        merchantId: record.merchantId,
+        campaignId: record.campaignId,
+        updatedAt: record.updatedAt,
+        destinationUrl:
+          typeof record.destinationUrl === 'string'
+            ? record.destinationUrl
+            : undefined,
+      };
     }
 
     // Compact format from API: { v, a, u, mid, cid, lid, ... }
