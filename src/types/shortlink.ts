@@ -4,6 +4,7 @@ export interface ShortLink {
   merchantId: string;
   campaignId: string;
   updatedAt: string;
+  destinationUrl?: string;
 }
 
 export interface RedirectParams {

@@ -5,30 +5,31 @@ export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ shortLinkId: string }> }
+  { params }: { params: Promise<{ code: string }> }
 ) {
-  const { shortLinkId } = await params;
+  const { code } = await params;
+  console.log(`Received request for short link code: ${code}`);
 
   try {
     // Get short link data with fallback strategy
-    const shortLinkData = await ShortLinkService.getShortLink(shortLinkId);
+    const shortLinkData = await ShortLinkService.getShortLink(code);
 
     if (!shortLinkData) {
-      return new NextResponse('Short link not found', { 
+      return new NextResponse('Short link not found', {
         status: 404,
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-        }
+        },
       });
     }
 
     // Check if short link is active
     if (!ShortLinkService.isActive(shortLinkData)) {
-      return new NextResponse('Short link is inactive or expired', { 
+      return new NextResponse('Short link is inactive or expired', {
         status: 410, // Gone
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-        }
+        },
       });
     }
 
@@ -40,33 +41,19 @@ export async function GET(
       status: 302,
       headers: {
         'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
-        'X-Short-Link-Id': shortLinkId,
+        'X-Short-Link-Code': code,
         'X-Merchant-Id': shortLinkData.merchantId,
         'X-Campaign-Id': shortLinkData.campaignId,
-      }
+      },
     });
-
   } catch (error) {
-    console.error('Redirect API error:', error);
-    
-    return new NextResponse('Internal server error', { 
+    console.error('Redirect error:', error);
+
+    return new NextResponse('Internal server error', {
       status: 500,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-      }
+      },
     });
   }
-}
-
-// Handle other HTTP methods
-export async function POST() {
-  return new NextResponse('Method not allowed', { status: 405 });
-}
-
-export async function PUT() {
-  return new NextResponse('Method not allowed', { status: 405 });
-}
-
-export async function DELETE() {
-  return new NextResponse('Method not allowed', { status: 405 });
 }
