@@ -1,5 +1,6 @@
 import { ShortLinkService } from '@/lib/shortlink-service';
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 
 export const runtime = 'edge';
 
@@ -47,8 +48,10 @@ export async function GET(
       });
     }
 
-    // Fire scan event to analytics API (fire-and-forget)
-    ShortLinkService.fireScanEvent(shortLinkData, redirectResult.sId);
+    // Fire scan event to analytics API (uses after() to survive after response)
+    after(async () => {
+      await ShortLinkService.fireScanEvent(shortLinkData, redirectResult.sId);
+    });
 
     // Return 302 redirect
     return NextResponse.redirect(redirectResult.url, {

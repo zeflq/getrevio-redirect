@@ -223,37 +223,45 @@ export class ShortLinkService {
   }
 
   /**
-   * Fire scan event to analytics API (fire-and-forget)
-   * Does not block the redirect - logs errors but never throws
+   * Fire scan event to analytics API
+   * Uses async/await for proper integration with next/server after()
+   * Logs errors but never throws to avoid breaking redirects
    */
-  static fireScanEvent(shortLinkData: ShortLink, sId: string): void {
-    // Fire-and-forget: don't await, don't block redirect
+  static async fireScanEvent(shortLinkData: ShortLink, sId: string): Promise<void> {
     console.log('[Analytics] Firing scan event to:', API_ENDPOINTS.analytics.track);
-    fetch(API_ENDPOINTS.analytics.track, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Source': 'redirect-service', // Custom header for identification (Origin may be stripped in Edge)
-      },
-      body: JSON.stringify({
-        event: 'scan',
-        sId,
-        shortlinkCode: shortLinkData.slug,
-        merchantId: shortLinkData.merchantId,
-        campaignId: shortLinkData.campaignId || null,
-        placeId: shortLinkData.placeId || null,
-        channel: shortLinkData.channel || 'qr', // Default to QR if not specified
-        utmSource: shortLinkData.utmSource || null,
-        utmMedium: shortLinkData.utmMedium || null,
-        utmCampaign: shortLinkData.utmCampaign || null,
-        utmTerm: shortLinkData.utmTerm || null,
-        utmContent: shortLinkData.utmContent || null,
-      }),
-      signal: AbortSignal.timeout(3000), // 3 second timeout
-    }).catch((error) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.analytics.track, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Source': 'redirect-service', // Custom header for identification (Origin may be stripped in Edge)
+        },
+        body: JSON.stringify({
+          event: 'scan',
+          sId,
+          shortlinkCode: shortLinkData.slug,
+          merchantId: shortLinkData.merchantId,
+          campaignId: shortLinkData.campaignId || null,
+          placeId: shortLinkData.placeId || null,
+          channel: shortLinkData.channel || 'qr', // Default to QR if not specified
+          utmSource: shortLinkData.utmSource || null,
+          utmMedium: shortLinkData.utmMedium || null,
+          utmCampaign: shortLinkData.utmCampaign || null,
+          utmTerm: shortLinkData.utmTerm || null,
+          utmContent: shortLinkData.utmContent || null,
+        }),
+        signal: AbortSignal.timeout(3000), // 3 second timeout
+      });
+
+      console.log('[Analytics] Scan event response:', response.status, response.statusText);
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('[Analytics] Scan event failed with:', response.status, text);
+      }
+    } catch (error) {
       // Log but don't throw - analytics should never break redirects
-      console.error('[Analytics] Failed to fire scan event:', error);
-    });
+      console.error('[Analytics] Failed to fire scan event:', error instanceof Error ? error.message : error);
+    }
   }
 
   /**
