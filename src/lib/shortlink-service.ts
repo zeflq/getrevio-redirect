@@ -1,5 +1,6 @@
 import { redis } from './redis';
 import { ShortLink } from '../types/shortlink';
+import { API_ENDPOINTS } from './endpoints';
 
 export class ShortLinkService {
   private static readonly API_TIMEOUT = 5000; // 5 seconds
@@ -10,6 +11,17 @@ export class ShortLinkService {
       return shortLink;
     }
     return `${this.KEY_PREFIX}${shortLink}`;
+  }
+
+  private static readonly VALID_CHANNELS = ['qr', 'nfc', 'email', 'direct', 'social', 'paid', 'referral', 'web', 'print', 'custom'] as const;
+  private static readonly validChannelSet = new Set<string>(this.VALID_CHANNELS);
+
+  private static parseChannel(ch: unknown): typeof this.VALID_CHANNELS[number] | undefined {
+    if (typeof ch !== 'string') return undefined;
+    if (this.validChannelSet.has(ch)) {
+      return ch as typeof this.VALID_CHANNELS[number];
+    }
+    return undefined;
   }
 
   private static parseShortLinkPayload(
@@ -58,7 +70,7 @@ export class ShortLinkService {
       };
     }
 
-    // Compact format from API: { v, a, u, mid, cid, lid, ... }
+    // Compact format from API: { v, a, u, mid, cid, pid, ch, us, um, uc, ut, uco, ... }
     if (
       typeof record.mid === 'string' &&
       (record.a === 0 || record.a === 1 || record.a === '0' || record.a === '1')
@@ -84,6 +96,14 @@ export class ShortLinkService {
         campaignId: (record.cid as string) ?? '',
         updatedAt: new Date().toISOString(),
         destinationUrl: typeof record.u === 'string' ? record.u : undefined,
+        // Attribution fields (compact format)
+        placeId: typeof record.pid === 'string' ? record.pid : undefined,
+        channel: this.parseChannel(record.ch),
+        utmSource: typeof record.us === 'string' ? record.us : undefined,
+        utmMedium: typeof record.um === 'string' ? record.um : undefined,
+        utmCampaign: typeof record.uc === 'string' ? record.uc : undefined,
+        utmTerm: typeof record.ut === 'string' ? record.ut : undefined,
+        utmContent: typeof record.uco === 'string' ? record.uco : undefined,
       };
     }
 
@@ -184,20 +204,55 @@ export class ShortLinkService {
   /**
    * Build redirect URL
    * Returns null if destinationUrl is not available (caller should redirect to error page)
+   * @returns Object with url and sId (scan ID for analytics)
    */
-  static buildRedirectUrl(shortLinkData: ShortLink): string | null {
+  static buildRedirectUrl(shortLinkData: ShortLink): { url: string; sId: string } | null {
     if (!shortLinkData.destinationUrl) {
       // Can't build URL without destinationUrl - we don't have merchant/landing slugs in Redis
       return null;
     }
 
     const url = new URL(shortLinkData.destinationUrl);
+    const sId = crypto.randomUUID(); // scan ID - for tracking unique scans
 
     // Add tracking parameters for analytics
     url.searchParams.set('slc', shortLinkData.slug); // shortlink code - for attribution
-    url.searchParams.set('sid', crypto.randomUUID()); // session ID - for unique visits
+    url.searchParams.set('sId', sId); // scan ID - for unique visits (NOT auth session)
 
-    return url.toString();
+    return { url: url.toString(), sId };
+  }
+
+  /**
+   * Fire scan event to analytics API (fire-and-forget)
+   * Does not block the redirect - logs errors but never throws
+   */
+  static fireScanEvent(shortLinkData: ShortLink, sId: string): void {
+    // Fire-and-forget: don't await, don't block redirect
+    fetch(API_ENDPOINTS.analytics.track, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': 'https://r.getrevio.app', // Required for subdomain validation
+      },
+      body: JSON.stringify({
+        event: 'scan',
+        sId,
+        shortlinkCode: shortLinkData.slug,
+        merchantId: shortLinkData.merchantId,
+        campaignId: shortLinkData.campaignId || null,
+        placeId: shortLinkData.placeId || null,
+        channel: shortLinkData.channel || 'qr', // Default to QR if not specified
+        utmSource: shortLinkData.utmSource || null,
+        utmMedium: shortLinkData.utmMedium || null,
+        utmCampaign: shortLinkData.utmCampaign || null,
+        utmTerm: shortLinkData.utmTerm || null,
+        utmContent: shortLinkData.utmContent || null,
+      }),
+      signal: AbortSignal.timeout(3000), // 3 second timeout
+    }).catch((error) => {
+      // Log but don't throw - analytics should never break redirects
+      console.error('[Analytics] Failed to fire scan event:', error);
+    });
   }
 
   /**

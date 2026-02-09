@@ -34,10 +34,10 @@ export async function GET(
     }
 
     // Build redirect URL
-    const redirectUrl = ShortLinkService.buildRedirectUrl(shortLinkData);
+    const redirectResult = ShortLinkService.buildRedirectUrl(shortLinkData);
 
     // No destination URL available - redirect to error page
-    if (!redirectUrl) {
+    if (!redirectResult) {
       const errorPageUrl = process.env.ERROR_PAGE_URL || 'https://l.getrevio.com/error';
       return NextResponse.redirect(errorPageUrl, {
         status: 302,
@@ -47,8 +47,11 @@ export async function GET(
       });
     }
 
+    // Fire scan event to analytics API (fire-and-forget)
+    ShortLinkService.fireScanEvent(shortLinkData, redirectResult.sId);
+
     // Return 302 redirect
-    return NextResponse.redirect(redirectUrl, {
+    return NextResponse.redirect(redirectResult.url, {
       status: 302,
       headers: {
         'Cache-Control': 'public, max-age=300', // Cache for 5 minutes

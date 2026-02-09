@@ -216,18 +216,24 @@ describe('ShortLinkService.getShortLink (KV -> API -> cache)', () => {
 });
 
 describe('ShortLinkService.buildRedirectUrl', () => {
-  it('builds URL with base + slug + tracking params', () => {
-    process.env.BASE_REDIRECT_URL = 'https://app.yourapp.com/r';
+  it('returns null when destinationUrl is not available', () => {
+    const result = ShortLinkService.buildRedirectUrl(sample);
+    expect(result).toBeNull();
+  });
 
-    const url = ShortLinkService.buildRedirectUrl(sample);
-    const parsed = new URL(url);
+  it('builds URL with tracking params when destinationUrl is available', () => {
+    const sampleWithUrl: ShortLink = {
+      ...sample,
+      destinationUrl: 'https://l.getrevio.app/m/bella-pizza/l/sept-2025',
+    };
 
-    expect(parsed.origin + parsed.pathname).toBe(
-      'https://app.yourapp.com/r/bella-pizza-sept-2025',
-    );
-    expect(parsed.searchParams.get('sid')).toBe('test-uuid');
-    expect(parsed.searchParams.get('merchantId')).toBe('mer_123');
-    expect(parsed.searchParams.get('campaignId')).toBe('cmp_456');
+    const result = ShortLinkService.buildRedirectUrl(sampleWithUrl);
+    expect(result).not.toBeNull();
+    expect(result!.sId).toBe('test-uuid');
+
+    const parsed = new URL(result!.url);
+    expect(parsed.searchParams.get('slc')).toBe('bella-pizza-sept-2025');
+    expect(parsed.searchParams.get('sId')).toBe('test-uuid');
   });
 });
 
