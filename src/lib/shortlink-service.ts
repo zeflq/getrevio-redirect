@@ -228,11 +228,12 @@ export class ShortLinkService {
    */
   static fireScanEvent(shortLinkData: ShortLink, sId: string): void {
     // Fire-and-forget: don't await, don't block redirect
+    console.log('[Analytics] Firing scan event to:', API_ENDPOINTS.analytics.track);
     fetch(API_ENDPOINTS.analytics.track, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': 'https://r.getrevio.app', // Required for subdomain validation
+        'X-Source': 'redirect-service', // Custom header for identification (Origin may be stripped in Edge)
       },
       body: JSON.stringify({
         event: 'scan',
