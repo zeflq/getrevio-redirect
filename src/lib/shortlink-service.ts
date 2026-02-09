@@ -183,32 +183,19 @@ export class ShortLinkService {
 
   /**
    * Build redirect URL
+   * Returns null if destinationUrl is not available (caller should redirect to error page)
    */
-  static buildRedirectUrl(shortLinkData: ShortLink): string {
-    // Use destination URL from Redis if available (preferred)
-    if (shortLinkData.destinationUrl) {
-      const url = new URL(shortLinkData.destinationUrl);
-
-      // Add tracking parameters
-      url.searchParams.set('sid', crypto.randomUUID());
-      url.searchParams.set('merchantId', shortLinkData.merchantId);
-      if (shortLinkData.campaignId) {
-        url.searchParams.set('campaignId', shortLinkData.campaignId);
-      }
-
-      return url.toString();
+  static buildRedirectUrl(shortLinkData: ShortLink): string | null {
+    if (!shortLinkData.destinationUrl) {
+      // Can't build URL without destinationUrl - we don't have merchant/landing slugs in Redis
+      return null;
     }
 
-    // Fallback: Build URL from BASE_REDIRECT_URL (for API fallback responses)
-    const baseUrl = process.env.BASE_REDIRECT_URL || 'https://app.yourapp.com/r';
-    const url = new URL(`${baseUrl}/${shortLinkData.slug}`);
+    const url = new URL(shortLinkData.destinationUrl);
 
-    // Add tracking parameters
-    url.searchParams.set('sid', crypto.randomUUID());
-    url.searchParams.set('merchantId', shortLinkData.merchantId);
-    if (shortLinkData.campaignId) {
-      url.searchParams.set('campaignId', shortLinkData.campaignId);
-    }
+    // Add tracking parameters for analytics
+    url.searchParams.set('slc', shortLinkData.slug); // shortlink code - for attribution
+    url.searchParams.set('sid', crypto.randomUUID()); // session ID - for unique visits
 
     return url.toString();
   }
