@@ -9,6 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
+  const redirectCacheControl =
+    process.env.REDIRECT_CACHE_CONTROL?.trim() || 'no-cache';
   console.log(`Received request for short link code: ${code}`);
 
   try {
@@ -57,7 +59,7 @@ export async function GET(
     return NextResponse.redirect(redirectResult.url, {
       status: 302,
       headers: {
-        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+        'Cache-Control': redirectCacheControl,
         'X-Short-Link-Code': code,
       },
     });
