@@ -94,6 +94,7 @@ export class ShortLinkService {
         status,
         merchantId: record.mid as string,
         campaignId: (record.cid as string) ?? '',
+        landingId: typeof record.lid === 'string' ? record.lid : undefined,
         updatedAt: new Date().toISOString(),
         destinationUrl: typeof record.u === 'string' ? record.u : undefined,
         // Attribution fields (compact format)
@@ -241,6 +242,7 @@ export class ShortLinkService {
           sId,
           shortlinkCode: shortLinkData.slug,
           merchantId: shortLinkData.merchantId,
+          landingId: shortLinkData.landingId || null,
           campaignId: shortLinkData.campaignId || null,
           placeId: shortLinkData.placeId || null,
           channel: shortLinkData.channel || 'qr', // Default to QR if not specified

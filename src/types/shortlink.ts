@@ -3,6 +3,7 @@ export interface ShortLink {
   status: 'active' | 'inactive' | 'expired';
   merchantId: string;
   campaignId: string;
+  landingId?: string;
   updatedAt: string;
   destinationUrl?: string;
   // Attribution fields
