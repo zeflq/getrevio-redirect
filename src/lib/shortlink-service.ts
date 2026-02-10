@@ -97,14 +97,15 @@ export class ShortLinkService {
         landingId: typeof record.lid === 'string' ? record.lid : undefined,
         updatedAt: new Date().toISOString(),
         destinationUrl: typeof record.u === 'string' ? record.u : undefined,
-        // Attribution fields (compact format)
+        // Attribution fields (compact format: ch, us, um, uc, ut, uco)
+        // Also support legacy format (channel, utm.source, etc.) for backwards compatibility
         placeId: typeof record.pid === 'string' ? record.pid : undefined,
-        channel: this.parseChannel(record.ch),
-        utmSource: typeof record.us === 'string' ? record.us : undefined,
-        utmMedium: typeof record.um === 'string' ? record.um : undefined,
-        utmCampaign: typeof record.uc === 'string' ? record.uc : undefined,
-        utmTerm: typeof record.ut === 'string' ? record.ut : undefined,
-        utmContent: typeof record.uco === 'string' ? record.uco : undefined,
+        channel: this.parseChannel(record.ch) ?? this.parseChannel(record.channel),
+        utmSource: typeof record.us === 'string' ? record.us : (record.utm as Record<string, string> | undefined)?.source,
+        utmMedium: typeof record.um === 'string' ? record.um : (record.utm as Record<string, string> | undefined)?.medium,
+        utmCampaign: typeof record.uc === 'string' ? record.uc : (record.utm as Record<string, string> | undefined)?.campaign,
+        utmTerm: typeof record.ut === 'string' ? record.ut : (record.utm as Record<string, string> | undefined)?.term,
+        utmContent: typeof record.uco === 'string' ? record.uco : (record.utm as Record<string, string> | undefined)?.content,
       };
     }
 
