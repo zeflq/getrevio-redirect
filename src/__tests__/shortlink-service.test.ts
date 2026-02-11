@@ -229,9 +229,8 @@ describe('ShortLinkService.buildRedirectUrl', () => {
 
     const result = ShortLinkService.buildRedirectUrl(sampleWithUrl);
     expect(result).not.toBeNull();
-    expect(result!.sId).toBe('test-uuid');
 
-    const parsed = new URL(result!.url);
+    const parsed = new URL(result!);
     expect(parsed.searchParams.get('slc')).toBe('bella-pizza-sept-2025');
     expect(parsed.searchParams.get('sId')).toBeNull();
   });

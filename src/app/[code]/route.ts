@@ -37,10 +37,11 @@ export async function GET(
     }
 
     // Build redirect URL
-    const redirectResult = ShortLinkService.buildRedirectUrl(shortLinkData);
+    const redirectUrl = ShortLinkService.buildRedirectUrl(shortLinkData);
+    const sId = crypto.randomUUID();
 
     // No destination URL available - redirect to error page
-    if (!redirectResult) {
+    if (!redirectUrl) {
       const errorPageUrl = process.env.ERROR_PAGE_URL || 'https://l.getrevio.app/error';
       return NextResponse.redirect(errorPageUrl, {
         status: 302,
@@ -52,11 +53,11 @@ export async function GET(
 
     // Fire scan event to analytics API (uses after() to survive after response)
     after(async () => {
-      await ShortLinkService.fireScanEvent(shortLinkData, redirectResult.sId);
+      await ShortLinkService.fireScanEvent(shortLinkData, sId);
     });
 
     // Return 302 redirect
-    const response = NextResponse.redirect(redirectResult.url, {
+    const response = NextResponse.redirect(redirectUrl, {
       status: 302,
       headers: {
         'Cache-Control': redirectCacheControl,
@@ -66,7 +67,7 @@ export async function GET(
 
     response.cookies.set({
       name: 'sId',
-      value: redirectResult.sId,
+      value: sId,
       domain: '.getrevio.app',
       path: '/',
       httpOnly: true,

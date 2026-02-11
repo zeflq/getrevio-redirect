@@ -206,21 +206,20 @@ export class ShortLinkService {
   /**
    * Build redirect URL
    * Returns null if destinationUrl is not available (caller should redirect to error page)
-   * @returns Object with url and sId (scan ID for analytics/cookie)
+   * @returns Redirect URL only
    */
-  static buildRedirectUrl(shortLinkData: ShortLink): { url: string; sId: string } | null {
+  static buildRedirectUrl(shortLinkData: ShortLink): string | null {
     if (!shortLinkData.destinationUrl) {
       // Can't build URL without destinationUrl - we don't have merchant/landing slugs in Redis
       return null;
     }
 
     const url = new URL(shortLinkData.destinationUrl);
-    const sId = crypto.randomUUID(); // scan ID - for tracking unique scans
 
     // Add tracking parameters for analytics
     url.searchParams.set('slc', shortLinkData.slug); // shortlink code - for attribution
 
-    return { url: url.toString(), sId };
+    return url.toString();
   }
 
   /**
