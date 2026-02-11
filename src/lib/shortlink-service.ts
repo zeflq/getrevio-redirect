@@ -206,7 +206,7 @@ export class ShortLinkService {
   /**
    * Build redirect URL
    * Returns null if destinationUrl is not available (caller should redirect to error page)
-   * @returns Object with url and sId (scan ID for analytics)
+   * @returns Object with url and sId (scan ID for analytics/cookie)
    */
   static buildRedirectUrl(shortLinkData: ShortLink): { url: string; sId: string } | null {
     if (!shortLinkData.destinationUrl) {
@@ -219,7 +219,6 @@ export class ShortLinkService {
 
     // Add tracking parameters for analytics
     url.searchParams.set('slc', shortLinkData.slug); // shortlink code - for attribution
-    url.searchParams.set('sId', sId); // scan ID - for unique visits (NOT auth session)
 
     return { url: url.toString(), sId };
   }

@@ -233,7 +233,7 @@ describe('ShortLinkService.buildRedirectUrl', () => {
 
     const parsed = new URL(result!.url);
     expect(parsed.searchParams.get('slc')).toBe('bella-pizza-sept-2025');
-    expect(parsed.searchParams.get('sId')).toBe('test-uuid');
+    expect(parsed.searchParams.get('sId')).toBeNull();
   });
 });
 

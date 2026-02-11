@@ -41,7 +41,7 @@ export async function GET(
 
     // No destination URL available - redirect to error page
     if (!redirectResult) {
-      const errorPageUrl = process.env.ERROR_PAGE_URL || 'https://l.getrevio.com/error';
+      const errorPageUrl = process.env.ERROR_PAGE_URL || 'https://l.getrevio.app/error';
       return NextResponse.redirect(errorPageUrl, {
         status: 302,
         headers: {
@@ -56,13 +56,25 @@ export async function GET(
     });
 
     // Return 302 redirect
-    return NextResponse.redirect(redirectResult.url, {
+    const response = NextResponse.redirect(redirectResult.url, {
       status: 302,
       headers: {
         'Cache-Control': redirectCacheControl,
         'X-Short-Link-Code': code,
       },
     });
+
+    response.cookies.set({
+      name: 'sId',
+      value: redirectResult.sId,
+      domain: '.getrevio.app',
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+    });
+
+    return response;
   } catch (error) {
     console.error('Redirect error:', error);
 
